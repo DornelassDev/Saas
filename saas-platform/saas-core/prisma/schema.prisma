@@ -1,0 +1,186 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  name        String?
+  avatar      String?
+  role        UserRole @default(CLIENT)
+  googleId    String?  @unique
+  password    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  clients     Client[]
+  payments    Payment[]
+  tickets     Ticket[]
+  
+  @@map("users")
+}
+
+model Client {
+  id          String        @id @default(cuid())
+  name        String
+  domain      String?
+  status      ClientStatus  @default(ACTIVE)
+  port        Int?
+  projectPath String
+  projectType ProjectType   @default(UNKNOWN)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  
+  // Relations
+  userId      String
+  user        User          @relation(fields: [userId], references: [id])
+  projects    Project[]
+  monitoring  Monitoring[]
+  payments    Payment[]
+  
+  @@map("clients")
+}
+
+model Project {
+  id          String        @id @default(cuid())
+  name        String
+  description String?
+  repository  String?
+  branch      String        @default("main")
+  buildCommand String?
+  startCommand String?
+  envVars     String?       // JSON string
+  status      ProjectStatus @default(STOPPED)
+  port        Int?
+  pid         Int?
+  lastDeploy  DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  
+  // Relations
+  clientId    String
+  client      Client        @relation(fields: [clientId], references: [id])
+  monitoring  Monitoring[]
+  
+  @@map("projects")
+}
+
+model Monitoring {
+  id            String   @id @default(cuid())
+  timestamp     DateTime @default(now())
+  cpuUsage      Float?
+  memoryUsage   Float?
+  diskUsage     Float?
+  responseTime  Float?
+  uptime        Int?
+  errorCount    Int      @default(0)
+  requestCount  Int      @default(0)
+  status        String   @default("unknown")
+  customMetrics String?  // JSON string
+  
+  // Relations
+  clientId      String
+  client        Client   @relation(fields: [clientId], references: [id])
+  projectId     String?
+  project       Project? @relation(fields: [projectId], references: [id])
+  
+  @@map("monitoring")
+}
+
+model Payment {
+  id              String        @id @default(cuid())
+  stripeId        String?       @unique
+  amount          Float
+  currency        String        @default("BRL")
+  status          PaymentStatus @default(PENDING)
+  description     String?
+  periodStart     DateTime
+  periodEnd       DateTime
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  // Relations
+  userId          String
+  user            User          @relation(fields: [userId], references: [id])
+  clientId        String
+  client          Client        @relation(fields: [clientId], references: [id])
+  
+  @@map("payments")
+}
+
+model Ticket {
+  id          String       @id @default(cuid())
+  title       String
+  description String
+  status      TicketStatus @default(OPEN)
+  priority    Priority     @default(MEDIUM)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  
+  // Relations
+  userId      String
+  user        User         @relation(fields: [userId], references: [id])
+  
+  @@map("tickets")
+}
+
+enum UserRole {
+  ADMIN
+  MASTER
+  CLIENT
+}
+
+enum ClientStatus {
+  ACTIVE
+  SUSPENDED
+  INACTIVE
+}
+
+enum ProjectType {
+  REACT
+  NODEJS
+  PYTHON
+  DJANGO
+  FLASK
+  NEXTJS
+  UNKNOWN
+}
+
+enum ProjectStatus {
+  RUNNING
+  STOPPED
+  ERROR
+  BUILDING
+  DEPLOYING
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}

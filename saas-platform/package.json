@@ -1,0 +1,24 @@
+{
+  "name": "saas-monitoring-platform",
+  "version": "1.0.0",
+  "description": "Multi-client SaaS monitoring platform",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:core\" \"npm run dev:agent\"",
+    "dev:core": "cd saas-core && npm run dev",
+    "dev:agent": "cd monitoring-agent && npm run dev",
+    "build": "npm run build:core && npm run build:agent",
+    "build:core": "cd saas-core && npm run build",
+    "build:agent": "cd monitoring-agent && npm run build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "workspaces": [
+    "saas-core",
+    "monitoring-agent",
+    "shared"
+  ]
+}
